@@ -1,0 +1,11 @@
+# Hermes container data (bind-mounted at /opt/data, created by chat.sh/reset.sh)
+/hermes-data/
+
+# Env secrets
+.env
+.env.*
+!.env.example
+
+# OS/editor cruft
+.DS_Store
+*.swp

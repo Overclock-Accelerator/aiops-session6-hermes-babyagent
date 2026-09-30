@@ -1,0 +1,43 @@
+# BabyAgent on Hermes Agent. Start it with ./chat.sh (which also seeds
+# ./hermes-data first — don't run `docker compose up` on a fresh checkout).
+#
+#   gateway    Hermes with its OpenAI-compatible API server: http://127.0.0.1:8642/v1
+#   dashboard  Hermes web dashboard (has a Chat page): http://127.0.0.1:9119
+
+x-hermes: &hermes
+  image: nousresearch/hermes-agent:latest
+  restart: unless-stopped
+  env_file: .env
+  volumes:
+    - ./hermes-data:/opt/data
+
+services:
+  gateway:
+    <<: *hermes
+    container_name: babyagent-gateway
+    environment:
+      - HERMES_UID=${HERMES_UID:-10000}
+      - HERMES_GID=${HERMES_GID:-10000}
+      - API_SERVER_ENABLED=true
+      - API_SERVER_HOST=0.0.0.0
+      - API_SERVER_PORT=8642
+      - API_SERVER_MODEL_NAME=babyagent
+    ports:
+      # Published to this machine only, not the whole network.
+      - "127.0.0.1:8642:8642"
+    command: ["gateway", "run"]
+
+  dashboard:
+    <<: *hermes
+    container_name: babyagent-dashboard
+    environment:
+      - HERMES_UID=${HERMES_UID:-10000}
+      - HERMES_GID=${HERMES_GID:-10000}
+    depends_on:
+      - gateway
+    # Bind 0.0.0.0 *inside* the container (needed for the published port under
+    # Docker Desktop); the 127.0.0.1: prefix keeps it reachable from this
+    # machine only. Hermes requires the dashboard login vars in .env for this.
+    ports:
+      - "127.0.0.1:9119:9119"
+    command: ["dashboard", "--host", "0.0.0.0", "--no-open"]
